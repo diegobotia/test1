@@ -1,0 +1,126 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Button, Row, Col, FormText } from 'reactstrap';
+import { isNumber, ValidatedField, ValidatedForm } from 'react-jhipster';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+import { convertDateTimeFromServer, convertDateTimeToServer, displayDefaultDateTime } from 'app/shared/util/date-utils';
+import { mapIdList } from 'app/shared/util/entity-utils';
+import { useAppDispatch, useAppSelector } from 'app/config/store';
+
+import { IBook } from 'app/shared/model/book.model';
+import { getEntities as getBooks } from 'app/entities/book/book.reducer';
+import { IAuthor } from 'app/shared/model/author.model';
+import { getEntity, updateEntity, createEntity, reset } from './author.reducer';
+
+export const AuthorUpdate = () => {
+  const dispatch = useAppDispatch();
+
+  const navigate = useNavigate();
+
+  const { id } = useParams<'id'>();
+  const isNew = id === undefined;
+
+  const books = useAppSelector(state => state.book.entities);
+  const authorEntity = useAppSelector(state => state.author.entity);
+  const loading = useAppSelector(state => state.author.loading);
+  const updating = useAppSelector(state => state.author.updating);
+  const updateSuccess = useAppSelector(state => state.author.updateSuccess);
+
+  const handleClose = () => {
+    navigate('/author' + location.search);
+  };
+
+  useEffect(() => {
+    if (isNew) {
+      dispatch(reset());
+    } else {
+      dispatch(getEntity(id));
+    }
+
+    dispatch(getBooks({}));
+  }, []);
+
+  useEffect(() => {
+    if (updateSuccess) {
+      handleClose();
+    }
+  }, [updateSuccess]);
+
+  const saveEntity = values => {
+    const entity = {
+      ...authorEntity,
+      ...values,
+    };
+
+    if (isNew) {
+      dispatch(createEntity(entity));
+    } else {
+      dispatch(updateEntity(entity));
+    }
+  };
+
+  const defaultValues = () =>
+    isNew
+      ? {}
+      : {
+          ...authorEntity,
+        };
+
+  return (
+    <div>
+      <Row className="justify-content-center">
+        <Col md="8">
+          <h2 id="test1App.author.home.createOrEditLabel" data-cy="AuthorCreateUpdateHeading">
+            Crear o editar Author
+          </h2>
+        </Col>
+      </Row>
+      <Row className="justify-content-center">
+        <Col md="8">
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            <ValidatedForm defaultValues={defaultValues()} onSubmit={saveEntity}>
+              {!isNew ? <ValidatedField name="id" required readOnly id="author-id" label="ID" validate={{ required: true }} /> : null}
+              <ValidatedField
+                label="First Name"
+                id="author-firstName"
+                name="firstName"
+                data-cy="firstName"
+                type="text"
+                validate={{
+                  required: { value: true, message: 'Este campo es obligatorio.' },
+                  maxLength: { value: 50, message: 'Este campo no puede superar más de 50 caracteres.' },
+                }}
+              />
+              <ValidatedField
+                label="Last Name"
+                id="author-lastName"
+                name="lastName"
+                data-cy="lastName"
+                type="text"
+                validate={{
+                  required: { value: true, message: 'Este campo es obligatorio.' },
+                  maxLength: { value: 50, message: 'Este campo no puede superar más de 50 caracteres.' },
+                }}
+              />
+              <Button tag={Link} id="cancel-save" data-cy="entityCreateCancelButton" to="/author" replace color="info">
+                <FontAwesomeIcon icon="arrow-left" />
+                &nbsp;
+                <span className="d-none d-md-inline">Volver</span>
+              </Button>
+              &nbsp;
+              <Button color="primary" id="save-entity" data-cy="entityCreateSaveButton" type="submit" disabled={updating}>
+                <FontAwesomeIcon icon="save" />
+                &nbsp; Guardar
+              </Button>
+            </ValidatedForm>
+          )}
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+export default AuthorUpdate;
